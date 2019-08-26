@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt 
@@ -15,7 +18,16 @@ from pygame import freetype
 from PIL import Image
 import math
 from common import *
-import pickle
+import codecs
+from logger import logger
+
+import nltk, re, pprint
+from nltk import word_tokenize, sent_tokenize
+from nltk.corpus.reader import *
+from nltk.corpus.reader.util import *
+from nltk.text import Text
+from nltk.corpus.reader.chasen import *
+import subprocess
 
 def sample_weighted(p_dict):
     ps = list(p_dict.keys())
@@ -80,7 +92,7 @@ class RenderFont(object):
         Also, outputs ground-truth bounding boxes and text string
     """
 
-    def __init__(self, data_dir='data'):
+    def __init__(self, data_dir='data', lang="ENG"):
         # distribution over the type of text:
         # whether to get a single word, paragraph or a line:
         self.p_text = {0.0 : 'WORD',
@@ -103,7 +115,8 @@ class RenderFont(object):
 
         # text-source : gets english text:
         self.text_source = TextSource(min_nchar=self.min_nchar,
-                                      fn=osp.join(data_dir,'newsgroup/newsgroup.txt'))
+                                      fn=osp.join(data_dir,'newsgroup/newsgroup.txt'),
+                                      lang=lang)
 
         # get font-state object:
         self.font_state = FontState(data_dir)
@@ -365,6 +378,7 @@ class RenderFont(object):
             # sample text:
             text_type = sample_weighted(self.p_text)
             text = self.text_source.sample(nline,nchar,text_type)
+
             if len(text)==0 or np.any([len(line)==0 for line in text]):
                 continue
             #print colorize(Color.GREEN, text)
@@ -388,7 +402,7 @@ class RenderFont(object):
     def visualize_bb(self, text_arr, bbs):
         ta = text_arr.copy()
         for r in bbs:
-            cv.rectangle(ta, (r[0],r[1]), (r[0]+r[2],r[1]+r[3]), color=128, thickness=1)
+            cv2.rectangle(ta, (r[0],r[1]), (r[0]+r[2],r[1]+r[3]), color=128, thickness=1)
         plt.imshow(ta,cmap='gray')
         plt.show()
 
@@ -452,7 +466,7 @@ class FontState(object):
             sizes = font.get_metrics(chars,size)
             good_idx = [i for i in range(len(sizes)) if sizes[i] is not None]
             sizes,w = [sizes[i] for i in good_idx], w[good_idx]
-            sizes = np.array(sizes).astype('float')[:,[3,4]]        
+            sizes = np.array(sizes).astype('float')[:,[3,4]]
             r = np.abs(sizes[:,1]/sizes[:,0]) # width/height
             good = np.isfinite(r)
             r = r[good]
@@ -513,7 +527,23 @@ class TextSource(object):
     """
     Provides text for words, paragraphs, sentences.
     """
-    def __init__(self, min_nchar, fn):
+
+    __ranges = [
+        {"from": ord(u"\u3300"), "to": ord(u"\u33ff")},  # compatibility ideographs
+        {"from": ord(u"\ufe30"), "to": ord(u"\ufe4f")},  # compatibility ideographs
+        {"from": ord(u"\uf900"), "to": ord(u"\ufaff")},  # compatibility ideographs
+        {"from": ord(u"\U0002F800"), "to": ord(u"\U0002fa1f")},  # compatibility ideographs
+        {"from": ord(u"\u30a0"), "to": ord(u"\u30ff")},  # Japanese Kana
+        {"from": ord(u"\u2e80"), "to": ord(u"\u2eff")},  # cjk radicals supplement
+        {"from": ord(u"\u4e00"), "to": ord(u"\u9fff")},
+        {"from": ord(u"\u3400"), "to": ord(u"\u4dbf")},
+        {"from": ord(u"\U00020000"), "to": ord(u"\U0002a6df")},
+        {"from": ord(u"\U0002a700"), "to": ord(u"\U0002b73f")},
+        {"from": ord(u"\U0002b740"), "to": ord(u"\U0002b81f")},
+        {"from": ord(u"\U0002b820"), "to": ord(u"\U0002ceaf")}  # included as of Unicode 8.0
+    ]
+
+    def __init__(self, min_nchar, fn, lang="ENG"):
         """
         TXT_FN : path to file containing text data.
         """
@@ -521,9 +551,43 @@ class TextSource(object):
         self.fdict = {'WORD':self.sample_word,
                       'LINE':self.sample_line,
                       'PARA':self.sample_para}
+        self.lang = lang
+        # parse English text
+        if self.lang == "ENG":
+            corpus = PlaintextCorpusReader("./",
+                                         fn)
 
-        with open(fn,'r') as f:
-            self.txt = [l.strip() for l in f.readlines()]
+            self.words = corpus.words()
+            self.sents = corpus.sents()
+            self.paras = corpus.paras()
+
+        # parse Japanese text
+        elif self.lang == "JPN":
+
+            # convert fs into chasen file
+            _, ext = os.path.splitext(os.path.basename(fn))
+            fn_chasen = fn.replace(ext, ".chasen")
+            print "Convert {} into {}".format(fn, fn_chasen)
+
+            cmd = "mecab -Ochasen {} > {}".format(fn, fn_chasen)
+            print "The following cmd below was executed to convert into chasen (for Japanese)"
+            print "\t{}".format(cmd)
+            p = subprocess.call(cmd, shell=True)
+            data = ChasenCorpusReader('./', fn_chasen, encoding='utf-8')
+
+            self.words = data.words()
+            self.sents = data.sents()
+            self.paras = data.paras()
+
+            # jp_sent_tokenizer = nltk.RegexpTokenizer(u'[^　「」！？。]*[！？。]')
+            # jp_chartype_tokenizer = nltk.RegexpTokenizer(u'([ぁ-んー]+|[ァ-ンー]+|[\u4e00-\u9FFF]+|[^ぁ-んァ-ンー\u4e00-\u9FFF]+)')
+            #
+            # corpus = PlaintextCorpusReader("./",
+            #                              fn,
+            #                              encoding='utf-8',
+            #                              para_block_reader=read_line_block,
+            #                              sent_tokenizer=jp_sent_tokenizer,
+            #                              word_tokenizer=jp_chartype_tokenizer)
 
         # distribution over line/words for LINE/PARA:
         self.p_line_nline = np.array([0.85, 0.10, 0.05])
@@ -534,13 +598,26 @@ class TextSource(object):
         # probability to center-align a paragraph:
         self.center_para = 0.5
 
+    def is_cjk(self, char):
+        return any([range["from"] <= ord(char) <= range["to"] for range in self.__ranges])
 
     def check_symb_frac(self, txt, f=0.35):
         """
         T/F return : T iff fraction of symbol/special-charcters in
                      txt is less than or equal to f (default=0.25).
         """
-        return np.sum([not ch.isalnum() for ch in txt])/(len(txt)+0.0) <= f
+        if self.lang == "ENG":
+            return np.sum([not ch.isalnum() for ch in txt]) / (len(txt) + 0.0) <= f
+
+        elif self.lang == "JPN":
+            chcnt = 0
+            line = txt  # .decode('utf-8')
+            for ch in line:
+                if ch.isalnum() or self.is_cjk(ch):
+                    chcnt += 1
+
+            return float(chcnt) / (len(txt) + 0.0) > f
+        # return np.sum([not ch.isalnum() for ch in txt])/(len(txt)+0.0) <= f
 
     def is_good(self, txt, f=0.35):
         """
@@ -577,13 +654,14 @@ class TextSource(object):
         return lines
 
     def get_lines(self, nline, nword, nchar_max, f=0.35, niter=100):
+
         def h_lines(niter=100):
             lines = ['']
             iter = 0
             while not np.all(self.is_good(lines,f)) and iter < niter:
                 iter += 1
-                line_start = np.random.choice(len(self.txt)-nline)
-                lines = [self.txt[line_start+i] for i in range(nline)]
+                line_start = np.random.choice(len(self.sents)-nline)
+                lines = [self.sents[line_start+i] for i in range(nline)]
             return lines
 
         lines = ['']
@@ -594,7 +672,7 @@ class TextSource(object):
             # get words per line:
             nline = len(lines)
             for i in range(nline):
-                words = lines[i].split()
+                words = lines[i]
                 dw = len(words)-nword[i]
                 if dw > 0:
                     first_word_index = random.choice(range(dw+1))
@@ -613,15 +691,15 @@ class TextSource(object):
 
     def sample(self, nline_max,nchar_max,kind='WORD'):
         return self.fdict[kind](nline_max,nchar_max)
-        
+
     def sample_word(self,nline_max,nchar_max,niter=100):
-        rand_line = self.txt[np.random.choice(len(self.txt))]                
+        rand_line = self.sents[np.random.choice(len(self.sents))]
         words = rand_line.split()
         rand_word = random.choice(words)
 
         iter = 0
         while iter < niter and (not self.is_good([rand_word])[0] or len(rand_word)>nchar_max):
-            rand_line = self.txt[np.random.choice(len(self.txt))]                
+            rand_line = self.txt[np.random.choice(len(self.sents))]
             words = rand_line.split()
             rand_word = random.choice(words)
             iter += 1

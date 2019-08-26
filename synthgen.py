@@ -10,7 +10,7 @@ import copy
 import cv2
 import h5py
 from PIL import Image
-import numpy as np 
+import numpy as np
 #import mayavi.mlab as mym
 import matplotlib.pyplot as plt 
 import os.path as osp
@@ -78,7 +78,6 @@ class TextRegions(object):
 
             coords = np.c_[xs,ys].astype('float32')
             rect = cv2.minAreaRect(coords)          
-            #box = np.array(cv2.cv.BoxPoints(rect))
             box = np.array(cv2.boxPoints(rect))
             h,w,rot = TextRegions.get_hw(box,return_rot=True)
 
@@ -216,7 +215,7 @@ def get_text_placement_mask(xyz,mask,plane,pad=2,viz=False):
     REGION : DICT output of TextRegions.get_regions
     PAD : number of pixels to pad the placement-mask by
     """
-    contour,hier = cv2.findContours(mask.copy().astype('uint8'),
+    _, contour,hier = cv2.findContours(mask.copy().astype('uint8'),
                                     mode=cv2.RETR_CCOMP,
                                     method=cv2.CHAIN_APPROX_SIMPLE)
     contour = [np.squeeze(c).astype('float') for c in contour]
@@ -365,8 +364,8 @@ def viz_textbb(fignum,text_im, bb_list,alpha=1.0):
 
 class RendererV3(object):
 
-    def __init__(self, data_dir, max_time=None):
-        self.text_renderer = tu.RenderFont(data_dir)
+    def __init__(self, data_dir, max_time=None, lang="ENG"):
+        self.text_renderer = tu.RenderFont(data_dir, lang)
         self.colorizer = Colorize(data_dir)
         #self.colorizerV2 = colorV2.Colorize(data_dir)
 

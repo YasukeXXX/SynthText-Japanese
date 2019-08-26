@@ -1,3 +1,87 @@
+# SynthText for (English + Japanese)
+Code for generating synthetic text images as described in ["Synthetic Data for Text Localisation in Natural Images", Ankush Gupta, Andrea Vedaldi, Andrew Zisserman, CVPR 2016](http://www.robots.ox.ac.uk/~vgg/data/scenetext/) with support for japanese characters
+
+## TODO
+
+Add support for chinese
+
+## Output samples
+
+
+**Synthetic Japanese Text Samples 1**
+
+![Japanese example 1](results/sample1.png "Synthetic Japanese Text Samples 1")
+
+
+**Synthetic Japanese Text Samples 2**
+
+![Japanese example 2](results/sample2.png "Synthetic Japanese Text Samples 2")
+
+
+**Synthetic Japanese Text Samples 3**
+
+![Japanese example 3](results/sample3.png "Synthetic Japanese Text Samples 3")
+
+
+**Synthetic Japanese Text Samples 4**
+
+![Japanese example 4](results/sample4.png "Synthetic Japanese Text Samples 4")
+
+
+The code in the `master` branch is for Python2. Python3 is supported in the `python3` branch.
+
+The main dependencies are:
+
+```
+pygame, opencv (version 3.3), PIL (Image), numpy, matplotlib, h5py, scipy
+```
+
+## The main differences
+
+1. Use opencv 3.3 instead of opencv 2.4
+2. Use nltk to parse language (eng, jpn)
+
+## How to use this source
+
+### Preparation
+
+Put your text data and font as follow
+
+```
+data
+├── dset.h5
+├── fonts
+│   ├── fontlist.txt                        : your font list
+│   ├── ubuntu
+│   ├── ubuntucondensed
+│   ├── ubuntujapanese                      : your japanese font
+│   └── ubuntumono
+├── models
+│   ├── char_freq.cp
+│   ├── colors_new.cp
+│   └── font_px2pt.cp
+└── newsgroup
+    └── newsgroup.txt                       : your text source
+```
+
+### Install dependencies
+
+```
+# For japanese
+sudo apt-get install libmecab2 libmecab-dev mecab mecab-ipadic mecab-ipadic-utf8 mecab-utils
+```
+
+### Generate font model and char model
+```
+python invert_font_size.py
+python update_freq.py
+
+mv char_freq.cp data/models/
+mv font_px2pt.cp data/models/
+```
+
+### Then go to next
+
 # SynthText
 Code for generating synthetic text images as described in ["Synthetic Data for Text Localisation in Natural Images", Ankush Gupta, Andrea Vedaldi, Andrew Zisserman, CVPR 2016](http://www.robots.ox.ac.uk/~vgg/data/scenetext/).
 
@@ -5,18 +89,10 @@ Code for generating synthetic text images as described in ["Synthetic Data for T
 **Synthetic Scene-Text Image Samples**
 ![Synthetic Scene-Text Samples](samples.png "Synthetic Samples")
 
-The code in the `master` branch is for Python2. Python3 is supported in the `python3` branch.
-
-The main dependencies are:
-
-```
-pygame, opencv (cv2), PIL (Image), numpy, matplotlib, h5py, scipy
-```
-
 ### Generating samples
 
 ```
-python gen.py --viz
+python gen.py --viz --lang ENG/JPN
 ```
 
 This will download a data file (~56M) to the `data` directory. This data file includes:
@@ -60,12 +136,9 @@ These part files are named: `depth.h5-00, depth.h5-01, depth.h5-02`. Download us
 Note: I do not own the copyright to these images.
 
 ### Generating Samples with Text in non-Latin (English) Scripts
-- @JarveeLee has modified the pipeline for generating samples with Chinese text [here](https://github.com/JarveeLee/SynthText_Chinese_version).
-- @adavoudi has modified it for arabic/persian script, which flows from right-to-left [here](https://github.com/adavoudi/SynthText).
-- @MichalBusta has adapted it for a number of languages (e.g. Bangla, Arabic, Chinese, Japanese, Korean) [here](https://github.com/MichalBusta/E2E-MLT).
-- @gachiemchiep has adapted for Japanese [here](https://github.com/gachiemchiep/SynthText).
-- @gungui98 has adapted for Vietnamese [here](https://github.com/gungui98/SynthText).
-- @youngkyung has adapted for Korean [here](https://github.com/youngkyung/SynthText_kr).
+@JarveeLee has modified the pipeline for generating samples with Chinese text [here](https://github.com/JarveeLee/SynthText_Chinese_version).
+@gachiemchiep has modified the pipeline for generating samples with Japanese text [here](https://github.com/gachiemchiep/SynthText).
+
 
 ### Further Information
 Please refer to the paper for more information, or contact me (email address in the paper).
