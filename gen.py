@@ -23,6 +23,9 @@ from synthgen import *
 from common import *
 import wget, tarfile
 import cv2
+import cPickle as cp
+import time
+from tqdm import tqdm
 
 ## Define some configuration variables:
 NUM_IMG = -1  # no. of images to use for generation (-1 to use all available):
@@ -34,8 +37,14 @@ DATA_PATH = 'data'
 DB_FNAME = osp.join(DATA_PATH, 'dset.h5')
 # url of the data (google-drive public file):
 DATA_URL = 'http://www.robots.ox.ac.uk/~ankush/data.tar.gz'
-OUT_FILE = 'results/SynthText.h5'
+OUT_FILE = 'results/linus_JPN.h5'
 OUT_DIR = 'results'
+
+# Real generation
+BACKGROUND_IM_DIR = '/mnt/data/linus/SynthText_for_FakeID/bg_img'
+DEPTH_DB_DIR = '/mnt/data/linus/SynthText_for_FakeID/depth.h5'
+SEG_DB_DIR = '/mnt/data/linus/SynthText_for_FakeID/seg.h5'
+IMNAMES_DB_DIR = '/mnt/data/linus/SynthText_for_FakeID/imnames.cp'
 
 def get_data():
     """
@@ -95,7 +104,12 @@ def save_res_to_imgs(imgname, res):
 def main(viz=False):
     # open databases:
     print colorize(Color.BLUE, 'getting data..', bold=True)
-    db = get_data()
+    # db = get_data()
+    depth_db = h5py.File(DEPTH_DB_DIR, 'r')
+    seg_db = h5py.File(SEG_DB_DIR, 'r')
+    imnames = sorted(depth_db.keys())
+    with open(IMNAMES_DB_DIR, 'rb') as f:
+        imnames = list(set(cp.load(f)))
     print colorize(Color.BLUE, '\t-> done', bold=True)
 
     # open the output h5 file:
@@ -103,55 +117,71 @@ def main(viz=False):
     out_db.create_group('/data')
     print colorize(Color.GREEN,'Storing the output in: '+OUT_FILE, bold=True)
 
-    # get the names of the image files in the dataset:
-    imnames = sorted(db['image'].keys())
     N = len(imnames)
     global NUM_IMG
     if NUM_IMG < 0:
         NUM_IMG = N
     start_idx, end_idx = 0, min(NUM_IMG, N)
 
+    time_db = []
+
     RV3 = RendererV3(DATA_PATH, max_time=SECS_PER_IMG, lang=args.lang)
-    for i in xrange(start_idx, end_idx):
+    for i in tqdm(xrange(start_idx, end_idx)):
         imname = imnames[i]
         try:
-            # get the image:
-            img = Image.fromarray(db['image'][imname][:])
-            # get the pre-computed depth:
-            #  there are 2 estimates of depth (represented as 2 "channels")
-            #  here we are using the second one (in some cases it might be
-            #  useful to use the other one):
-            depth = db['depth'][imname][:].T
-            depth = depth[:, :, 1]
-            # get segmentation:
-            seg = db['seg'][imname][:].astype('float32')
-            area = db['seg'][imname].attrs['area']
-            label = db['seg'][imname].attrs['label']
+            start_time = time.time()
+            # # get the image:
+            # img = Image.fromarray(db['image'][imname][:])
+            # # get the pre-computed depth:
+            # #  there are 2 estimates of depth (represented as 2 "channels")
+            # #  here we are using the second one (in some cases it might be
+            # #  useful to use the other one):
+            # depth = db['depth'][imname][:].T
+            # depth = depth[:, :, 1]
+            # # get segmentation:
+            # seg = db['seg'][imname][:].astype('float32')
+            # area = db['seg'][imname].attrs['area']
+            # label = db['seg'][imname].attrs['label']
+
+            img = Image.open(os.path.join(BACKGROUND_IM_DIR, imname)).convert('RGB')
+            # get depth:
+            depth = depth_db[imname][:].T
+            depth = depth[:,:,0]
+
+            # get segmentation info:
+            seg = seg_db['mask'][imname][:].astype('float32')
+            area = seg_db['mask'][imname].attrs['area']
+            label = seg_db['mask'][imname].attrs['label']
 
             # re-size uniformly:
             sz = depth.shape[:2][::-1]
             img = np.array(img.resize(sz, Image.ANTIALIAS))
             seg = np.array(Image.fromarray(seg).resize(sz, Image.NEAREST))
 
-            print colorize(Color.RED, '%d of %d' % (i, end_idx - 1), bold=True)
+            print colorize(Color.RED, '    %d of %d' % (i, end_idx - 1), bold=True)
             res = RV3.render_text(img, depth, seg, area, label,
                                   ninstance=INSTANCE_PER_IMAGE, viz=viz)
             if len(res) > 0:
                 # non-empty : successful in placing text:
                 add_res_to_db(imname,res,out_db)
-                save_res_to_imgs(imname, res)
+                # save_res_to_imgs(imname, res)
 
             # visualize the output:
             if viz:
                 save_res_to_imgs(imname, res)
                 if 'q' in raw_input(colorize(Color.RED, 'continue? (enter to continue, q to exit): ', True)):
                     break
+            total_time = time.time()-start_time
+            time_db.append(total_time)
+            print colorize(Color.GREEN, 'Took {} secs for {}. Avg {} secs/img'.format(total_time, imname, np.mean(time_db)))
         except:
             traceback.print_exc()
             print colorize(Color.GREEN, '>>>> CONTINUING....', bold=True)
             continue
-    db.close()
+    # db.close()
     out_db.close()
+    depth_db.close()
+    seg_db.close()
 
 
 if __name__ == '__main__':
@@ -160,7 +190,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Genereate Synthetic Scene-Text Images')
     parser.add_argument('--viz', action='store_true', dest='viz', default=False,
                         help='flag for turning on visualizations')
-    parser.add_argument('--lang', default='ENG',
+    parser.add_argument('--lang', default='JPN',
                         help='Select language : ENG/JPN')
     args = parser.parse_args()
     main(args.viz)

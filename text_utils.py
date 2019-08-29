@@ -599,7 +599,8 @@ class TextSource(object):
         self.center_para = 0.5
 
     def is_cjk(self, char):
-        # print(char)
+        if len(char) > 1:
+            return False
         return any([range["from"] <= ord(char) <= range["to"] for range in self.__ranges])
 
     def check_symb_frac(self, txt, f=0.35):
@@ -722,6 +723,25 @@ class TextSource(object):
         nword = [max(1,int(np.ceil(n))) for n in nword]
 
         lines = self.get_lines(nline, nword, nchar_max, f=0.35)
+        if lines is None:
+            return []
+        fuck = False
+        for each in lines:
+            if isinstance(each, list):
+                fuck = True
+                print colorize(Color.RED, 'Fucking up now: {}'.format(lines))
+                break
+        while fuck:
+            lines = self.get_lines(nline, nword, nchar_max, f=0.35, niter=100)
+            if lines is None:
+                return []
+            for each in lines:
+                if isinstance(each, list):
+                    fuck = True
+                    break
+            print colorize(Color.GREEN, 'No longer fuck: {}'.format(lines))
+            fuck = False
+
         if lines is not None:
             return '\n'.join(lines)
         else:
@@ -745,7 +765,7 @@ class TextSource(object):
         for each in lines:
             if isinstance(each, list):
                 fuck = True
-                print('Fucking up now:', lines)
+                print colorize(Color.RED, 'Fucking up now: {}'.format(lines))
                 break
         while fuck:
             lines = self.get_lines(nline, nword, nchar_max, f=0.35, niter=100)
@@ -755,8 +775,7 @@ class TextSource(object):
                 if isinstance(each, list):
                     fuck = True
                     break
-            print('No longer fuck:', lines)
-            print('===========================')
+            print colorize(Color.GREEN, 'No longer fuck: {}'.format(lines))
             fuck = False
 
         if lines is not None:
@@ -766,3 +785,13 @@ class TextSource(object):
             return '\n'.join(lines)
         else:
             return []
+
+
+def norm_print(lines):
+    output = []
+    for each in lines:
+        if isinstance(each, str):
+            output.append(each.decode('utf-8'))
+        elif isinstance(each, list):
+            output.append(norm_print(each))
+    return output
