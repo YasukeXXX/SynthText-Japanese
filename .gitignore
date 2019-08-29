@@ -91,3 +91,7 @@ ENV/
 
 results/
 .vscode/
+*.zip
+*.png
+*.cp
+*.chasen
