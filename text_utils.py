@@ -8,8 +8,8 @@ import scipy.io as sio
 import os.path as osp
 import random, os
 import cv2
-#import cPickle as cp
-import _pickle as cp
+import cPickle as cp
+#import _pickle as cp
 import scipy.signal as ssig
 import scipy.stats as sstat
 import pygame, pygame.locals
@@ -28,6 +28,7 @@ from nltk.corpus.reader.util import *
 from nltk.text import Text
 from nltk.corpus.reader.chasen import *
 import subprocess
+import pickle
 
 def sample_weighted(p_dict):
     ps = list(p_dict.keys())
@@ -433,19 +434,19 @@ class FontState(object):
 
         # get character-frequencies in the English language:
         with open(char_freq_path,'rb') as f:
-            #self.char_freq = cp.load(f)
-            u = pickle._Unpickler(f)
-            u.encoding = 'latin1'
-            p = u.load()
-            self.char_freq = p
+            self.char_freq = cp.load(f)
+            # u = pickle._Unpickler(f)
+            # u.encoding = 'latin1'
+            # p = u.load()
+            # self.char_freq = p
 
         # get the model to convert from pixel to font pt size:
         with open(font_model_path,'rb') as f:
-            #self.font_model = cp.load(f)
-            u = pickle._Unpickler(f)
-            u.encoding = 'latin1'
-            p = u.load()
-            self.font_model = p
+            self.font_model = cp.load(f)
+            # u = pickle._Unpickler(f)
+            # u.encoding = 'latin1'
+            # p = u.load()
+            # self.font_model = p
             
         # get the names of fonts to use:
         self.FONT_LIST = osp.join(data_dir, 'fonts/fontlist.txt')
@@ -554,8 +555,7 @@ class TextSource(object):
         self.lang = lang
         # parse English text
         if self.lang == "ENG":
-            corpus = PlaintextCorpusReader("./",
-                                         fn)
+            corpus = PlaintextCorpusReader("./", fn, encoding='utf-8')
 
             self.words = corpus.words()
             self.sents = corpus.sents()
@@ -599,6 +599,7 @@ class TextSource(object):
         self.center_para = 0.5
 
     def is_cjk(self, char):
+        # print(char)
         return any([range["from"] <= ord(char) <= range["to"] for range in self.__ranges])
 
     def check_symb_frac(self, txt, f=0.35):
@@ -668,7 +669,7 @@ class TextSource(object):
         iter = 0
         while not np.all(self.is_good(lines,f)) and iter < niter:
             iter += 1
-            lines = h_lines(niter=100)
+            lines = h_lines(niter=niter)
             # get words per line:
             nline = len(lines)
             for i in range(nline):
@@ -736,7 +737,28 @@ class TextSource(object):
                  for _ in range(nline)]
         nword = [max(1,int(np.ceil(n))) for n in nword]
 
-        lines = self.get_lines(nline, nword, nchar_max, f=0.35)
+
+        lines = self.get_lines(nline, nword, nchar_max, f=0.35, niter=100)
+        if lines is None:
+            return []
+        fuck = False
+        for each in lines:
+            if isinstance(each, list):
+                fuck = True
+                print('Fucking up now:', lines)
+                break
+        while fuck:
+            lines = self.get_lines(nline, nword, nchar_max, f=0.35, niter=100)
+            if lines is None:
+                return []
+            for each in lines:
+                if isinstance(each, list):
+                    fuck = True
+                    break
+            print('No longer fuck:', lines)
+            print('===========================')
+            fuck = False
+
         if lines is not None:
             # center align the paragraph-text:
             if np.random.rand() < self.center_para:

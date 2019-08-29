@@ -26,8 +26,8 @@ import cv2
 
 ## Define some configuration variables:
 NUM_IMG = -1  # no. of images to use for generation (-1 to use all available):
-INSTANCE_PER_IMAGE = 1  # no. of times to use the same image
-SECS_PER_IMG = 5  # max time per image in seconds
+INSTANCE_PER_IMAGE = 5  # no. of times to use the same image
+SECS_PER_IMG = None  # max time per image in seconds
 
 # path to the data-file, containing image, depth and segmentation:
 DATA_PATH = 'data'
@@ -139,6 +139,8 @@ def main(viz=False):
             if len(res) > 0:
                 # non-empty : successful in placing text:
                 add_res_to_db(imname,res,out_db)
+                save_res_to_imgs(imname, res)
+
             # visualize the output:
             if viz:
                 save_res_to_imgs(imname, res)
