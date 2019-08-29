@@ -24,10 +24,12 @@ from common import *
 import wget, tarfile
 import cv2
 import cPickle as cp
+import time
+from tqdm import tqdm
 
 ## Define some configuration variables:
-NUM_IMG = 5  # no. of images to use for generation (-1 to use all available):
-INSTANCE_PER_IMAGE = 10  # no. of times to use the same image
+NUM_IMG = -1  # no. of images to use for generation (-1 to use all available):
+INSTANCE_PER_IMAGE = 5  # no. of times to use the same image
 SECS_PER_IMG = None  # max time per image in seconds
 
 # path to the data-file, containing image, depth and segmentation:
@@ -121,10 +123,13 @@ def main(viz=False):
         NUM_IMG = N
     start_idx, end_idx = 0, min(NUM_IMG, N)
 
+    time_db = []
+
     RV3 = RendererV3(DATA_PATH, max_time=SECS_PER_IMG, lang=args.lang)
-    for i in xrange(start_idx, end_idx):
+    for i in tqdm(xrange(start_idx, end_idx)):
         imname = imnames[i]
         try:
+            start_time = time.time()
             # # get the image:
             # img = Image.fromarray(db['image'][imname][:])
             # # get the pre-computed depth:
@@ -153,7 +158,7 @@ def main(viz=False):
             img = np.array(img.resize(sz, Image.ANTIALIAS))
             seg = np.array(Image.fromarray(seg).resize(sz, Image.NEAREST))
 
-            print colorize(Color.RED, '%d of %d' % (i, end_idx - 1), bold=True)
+            print colorize(Color.RED, '    %d of %d' % (i, end_idx - 1), bold=True)
             res = RV3.render_text(img, depth, seg, area, label,
                                   ninstance=INSTANCE_PER_IMAGE, viz=viz)
             if len(res) > 0:
@@ -166,6 +171,9 @@ def main(viz=False):
                 save_res_to_imgs(imname, res)
                 if 'q' in raw_input(colorize(Color.RED, 'continue? (enter to continue, q to exit): ', True)):
                     break
+            total_time = time.time()-start_time
+            time_db.append(total_time)
+            print colorize(Color.GREEN, 'Took {} secs for {}. Avg {} secs/img'.format(total_time, imname, np.mean(time_db)))
         except:
             traceback.print_exc()
             print colorize(Color.GREEN, '>>>> CONTINUING....', bold=True)
