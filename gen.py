@@ -27,24 +27,26 @@ import cPickle as cp
 import time
 from tqdm import tqdm
 
-## Define some configuration variables:
-NUM_IMG = -1  # no. of images to use for generation (-1 to use all available):
-INSTANCE_PER_IMAGE = 5  # no. of times to use the same image
-SECS_PER_IMG = None  # max time per image in seconds
-
+### IGNORE THIS PART ###
 # path to the data-file, containing image, depth and segmentation:
 DATA_PATH = 'data'
 DB_FNAME = osp.join(DATA_PATH, 'dset.h5')
 # url of the data (google-drive public file):
 DATA_URL = 'http://www.robots.ox.ac.uk/~ankush/data.tar.gz'
-OUT_FILE = 'results/linus_JPN.h5'
-OUT_DIR = 'results'
+### IGNORE THIS PART ###
+
+## Define some configuration variables:
+NUM_IMG = -1  # no. of images to use for generation (-1 to use all available):
+INSTANCE_PER_IMAGE = 5  # no. of times to use the same image
+SECS_PER_IMG = None  # max time per image in seconds
 
 # Real generation
-BACKGROUND_IM_DIR = '/mnt/data/linus/SynthText_for_FakeID/bg_img'
-DEPTH_DB_DIR = '/mnt/data/linus/SynthText_for_FakeID/depth.h5'
-SEG_DB_DIR = '/mnt/data/linus/SynthText_for_FakeID/seg.h5'
-IMNAMES_DB_DIR = '/mnt/data/linus/SynthText_for_FakeID/imnames.cp'
+BACKGROUND_IM_DIR = 'background/bg_img'
+DEPTH_DB_DIR = 'background/depth.h5'
+SEG_DB_DIR = 'background/seg.h5'
+IMNAMES_DB_DIR = 'background/imnames.cp'
+OUT_FILE = 'results/linus_JPN.h5'
+OUT_DIR = 'results'
 
 def get_data():
     """
