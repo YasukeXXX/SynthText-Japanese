@@ -62,7 +62,7 @@ data
 python3 random_generate_text.py
 ```
 
-- Then generate font model and char model
+- Then generate font model and char model:
 ```
 python2 invert_font_size.py
 python2 update_freq.py
