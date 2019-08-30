@@ -99,13 +99,13 @@ wget http://www.robots.ox.ac.uk/~vgg/data/scenetext/preproc/seg.h5
 ### Generating samples
 
 ```
-python gen.py --viz --lang JPN
+python2 gen.py --viz --lang JPN
 ```
 
 This script will generate random scene-text image samples and store them in an h5 file in `results/linus_JPN.h5`. If the `--viz` option is specified, the generated output will be visualized as the script is being run; omit the `--viz` option to turn-off the visualizations. If you want to visualize the results stored in  `results/linus_JPN.h5` later, run:
 
 ```
-python visualize_results.py
+python2 visualize_results.py
 ```
 
 
