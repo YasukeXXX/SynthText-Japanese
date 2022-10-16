@@ -6,8 +6,8 @@ import scipy.ndimage as scim
 import scipy.ndimage.interpolation as sii
 import os
 import os.path as osp
-import cPickle as cp
-# import _pickle as cp
+# import cPickle as cp
+import _pickle as cp
 #import Image
 from PIL import Image
 from poisson_reconstruct import blit_images
@@ -46,11 +46,11 @@ class FontColor(object):
 
     def __init__(self, col_file):
         with open(col_file,'rb') as f:
-            self.colorsRGB = cp.load(f)
-            # u = pickle._Unpickler(f)
-            # u.encoding = 'latin1'
-            # p = u.load()
-            # self.colorsRGB = p
+            # self.colorsRGB = cp.load(f)
+            u = pickle._Unpickler(f)
+            u.encoding = 'latin1'
+            p = u.load()
+            self.colorsRGB = p
         self.ncol = self.colorsRGB.shape[0]
 
         # convert color-means from RGB to LAB for better nearest neighbour
@@ -463,3 +463,4 @@ class Colorize(object):
             return bg_arr
 
         return bg_arr
+

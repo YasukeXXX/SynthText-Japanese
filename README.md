@@ -64,8 +64,8 @@ python3 random_generate_text.py
 
 - Then generate font model and char model:
 ```
-python2 invert_font_size.py
-python2 update_freq.py
+python3 invert_font_size.py
+python3 update_freq.py
 
 mv char_freq.cp data/models/
 mv font_px2pt.cp data/models/
@@ -73,7 +73,7 @@ mv font_px2pt.cp data/models/
 ### Pre-processed Background Images Preparation
 
 The 8,000 background images used in the paper, along with their segmentation and depth masks, have been uploaded here:
-`http://www.robots.ox.ac.uk/~vgg/data/scenetext/preproc/<filename>`, where, `<filename>` can be:
+`https://thor.robots.ox.ac.uk//~vgg/data/scenetext/preproc/<filename>`, where, `<filename>` can be:
 
 - `imnames.cp` [180K]: names of filtered files, i.e., those files which do not contain text
 - `bg_img.tar.gz` [8.9G]: compressed image files (more than 8000, so only use the filtered ones in imnames.cp). md5 hash: `3eac26af5f731792c9d95838a23b5047  bg_img.tar.gz`.
@@ -86,10 +86,10 @@ These part files are named: `depth.h5-00, depth.h5-01, depth.h5-02`. Download us
 ```bash
 mkdir background
 cd background
-wget http://www.robots.ox.ac.uk/~vgg/data/scenetext/preproc/imnames.cp
-wget http://www.robots.ox.ac.uk/~vgg/data/scenetext/preproc/bg_img.tar.gz
-wget http://www.robots.ox.ac.uk/~vgg/data/scenetext/preproc/depth.h5
-wget http://www.robots.ox.ac.uk/~vgg/data/scenetext/preproc/seg.h5
+wget https://thor.robots.ox.ac.uk/~vgg/data/scenetext/preproc/imnames.cp
+wget https://thor.robots.ox.ac.uk/~vgg/data/scenetext/preproc/bg_img.tar.gz
+wget https://thor.robots.ox.ac.uk/~vgg/data/scenetext/preproc/depth.h5
+wget https://thor.robots.ox.ac.uk/~vgg/data/scenetext/preproc/seg.h5
 ```
 
 - Unzip the `bg_img.tar.gz` with this command `tar -xvzf bg_img.tar.gz`
@@ -99,13 +99,13 @@ wget http://www.robots.ox.ac.uk/~vgg/data/scenetext/preproc/seg.h5
 ### Generating samples
 
 ```
-python2 gen.py --viz --lang JPN
+python3 gen.py --viz --lang JPN
 ```
 
 This script will generate random scene-text image samples and store them in an h5 file in `results/linus_JPN.h5`. If the `--viz` option is specified, the generated output will be visualized as the script is being run; omit the `--viz` option to turn-off the visualizations. If you want to visualize the results stored in  `results/linus_JPN.h5` later, run:
 
 ```
-python2 visualize_results.py
+python3 visualize_results.py
 ```
 
 

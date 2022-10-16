@@ -8,8 +8,7 @@ import scipy.io as sio
 import os.path as osp
 import random, os
 import cv2
-import cPickle as cp
-#import _pickle as cp
+import _pickle as cp
 import scipy.signal as ssig
 import scipy.stats as sstat
 import pygame, pygame.locals
@@ -567,11 +566,11 @@ class TextSource(object):
             # convert fs into chasen file
             _, ext = os.path.splitext(os.path.basename(fn))
             fn_chasen = fn.replace(ext, ".chasen")
-            print "Convert {} into {}".format(fn, fn_chasen)
+            print("Convert {} into {}".format(fn, fn_chasen))
 
             cmd = "mecab -Ochasen {} > {}".format(fn, fn_chasen)
-            print "The following cmd below was executed to convert into chasen (for Japanese)"
-            print "\t{}".format(cmd)
+            print("The following cmd below was executed to convert into chasen (for Japanese)")
+            print("\t{}".format(cmd))
             p = subprocess.call(cmd, shell=True)
             data = ChasenCorpusReader('./', fn_chasen, encoding='utf-8')
 
@@ -729,7 +728,7 @@ class TextSource(object):
         for each in lines:
             if isinstance(each, list):
                 fuck = True
-                print colorize(Color.RED, 'Fucking up now: {}'.format(lines))
+                print(colorize(Color.RED, 'Fucking up now: {}'.format(lines)))
                 break
         while fuck:
             lines = self.get_lines(nline, nword, nchar_max, f=0.35, niter=100)
@@ -739,7 +738,7 @@ class TextSource(object):
                 if isinstance(each, list):
                     fuck = True
                     break
-            print colorize(Color.GREEN, 'No longer fuck: {}'.format(lines))
+            print(colorize(Color.GREEN, 'No longer fuck: {}'.format(lines)))
             fuck = False
 
         if lines is not None:
@@ -765,7 +764,7 @@ class TextSource(object):
         for each in lines:
             if isinstance(each, list):
                 fuck = True
-                print colorize(Color.RED, 'Fucking up now: {}'.format(lines))
+                print(colorize(Color.RED, 'Fucking up now: {}'.format(lines)))
                 break
         while fuck:
             lines = self.get_lines(nline, nword, nchar_max, f=0.35, niter=100)
@@ -775,7 +774,7 @@ class TextSource(object):
                 if isinstance(each, list):
                     fuck = True
                     break
-            print colorize(Color.GREEN, 'No longer fuck: {}'.format(lines))
+            print(colorize(Color.GREEN, 'No longer fuck: {}'.format(lines)))
             fuck = False
 
         if lines is not None:
